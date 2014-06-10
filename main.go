@@ -10,7 +10,7 @@ import(
     "strings"
     "github.com/howeyc/fsnotify"
     "runtime"
-   M "tblog/models"
+   M "github.com/weisd/tblog/models"
 )
 
 var (
