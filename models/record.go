@@ -54,7 +54,11 @@ func SaveTbRecord(info map[string]string) (err error){
     if !ok {
         return errors.New("[ERROR]field name time no exists!")
     }
-    timeTime, err := time.Parse("0.150405", v)
+    f64, err := strconv.ParseFloat(v, 64);
+    if err != nil {
+        return errors.New("{ERROR failed to parsefloat time}")
+    }
+    timeTime, err := time.Parse("0.150405", fmt.Sprintf("%0.6f", f64))
     if err != nil {
         return errors.New("[ERROR]field name time parse failed !")
     }
