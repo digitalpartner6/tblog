@@ -164,7 +164,7 @@ func Save2Mysql(file string){
             continue 
         }
         
-        fmt.Println("SetStats")
+        fmt.Println("SetStats"+time.Now().String())
         err = M.SetStats(fmt.Sprintf("%s_%s", info["FormulaName"], info["Symbol"]))
         if err != nil {
             Flog("[ERRO]:写入stat失败 ", err)
