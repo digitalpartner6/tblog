@@ -95,10 +95,8 @@ func NewWatcher(path string){
                   }else if e.IsRename() {
                       Flog("重命名文件：%s", e.Name)
                       */
-                  if e.IsAttrib() {
                       Save2Mysql(e.Name)
                       Flog("修改文件属性：%s", e.Name)
-                  }
               case err := <-watcher.Error:
                   Flog("err: %s", err.Error())
             }
