@@ -368,7 +368,7 @@ func SumInfo(fname, symbol string) (list map[string]string, err error){
 
  */
 func BaseInfo(fname, symbol string) (list map[string]string, err error){
-    sql := fmt.Sprintf("SELECT `capital`,`remaining`, `start_date`, `max_jing_li_run`, `max_hui_che_price` FROM `info` WHERE  `formula_name`='%s' and `symbol`='%s'", fname, symbol)
+    sql := fmt.Sprintf("SELECT `capital`,`remaining`, `start_date`, `max_jing_li_run`, `max_hui_che_price` FROM `finfo` WHERE  `formula_name`='%s' and `symbol`='%s'", fname, symbol)
 
     res, err := Engine.Query(sql)
     if err != nil {
