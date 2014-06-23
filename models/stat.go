@@ -113,10 +113,6 @@ func SetStats(id string) (err error){
     stat.MaxLoss = max_loss
     stat.TotalBar = total_bar
 
-    fmt.Println("=========")
-    fmt.Println(id)
-    fmt.Println("=========")
-
     testHas := &Stats{Id:id}
     has , err := Engine.Get(testHas)
     if err != nil {
@@ -322,4 +318,9 @@ func MaxKuiSun() (profit float64, err error){
     profit, err = strconv.ParseFloat(string(res[0]["profit"]), 64)
 
     return 
+}
+
+
+func GetYingLi(){
+
 }

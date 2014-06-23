@@ -3,6 +3,7 @@ package main
 import(
     "fmt"
     "os"
+    "path"
     "path/filepath"
     "bufio"
     "io"
@@ -39,6 +40,7 @@ func main(){
 
 }
 
+// 每次启动时，读一偏文件，入库
 func initData(dirPath string){
     filepath.Walk(dirPath, func(path string, f os.FileInfo, err error) error {
         if f == nil {
@@ -53,7 +55,7 @@ func initData(dirPath string){
         if !strings.HasSuffix(path, "TXT"){
             return nil
         }
-        fmt.Println(path)
+        //fmt.Println(path)
 
         Save2Mysql(path)
 
@@ -61,6 +63,7 @@ func initData(dirPath string){
     })
 }
 
+// 监控目录
 func NewWatcher(path string){
     watcher, err := fsnotify.NewWatcher()
     if err != nil {
@@ -85,18 +88,8 @@ func NewWatcher(path string){
                     continue
 				}
                 eventTime[e.Name] = mt
-                  /*
-                  if e.IsCreate() {
-                      Flog("创建文件：%s", e.Name)
-                  }else if e.IsDelete() {
-                      Flog("删除文件：%s", e.Name)
-                  }else if e.IsModify() {
-                      Flog("修改文件：%s", e.Name)
-                  }else if e.IsRename() {
-                      Flog("重命名文件：%s", e.Name)
-                      */
-                      Save2Mysql(e.Name)
-                      Flog("修改文件属性：%s", e.Name)
+                
+                Save2Mysql(e.Name)
               case err := <-watcher.Error:
                   Flog("err: %s", err.Error())
             }
@@ -105,7 +98,6 @@ func NewWatcher(path string){
 
     err = watcher.Watch(path)
     if err != nil {
-
         Flog("err : fail to watch dir ", err)
         os.Exit(2)
     }
@@ -118,6 +110,11 @@ func Flog(msg string, args... interface{}){
 }
 
 func Save2Mysql(file string){
+
+    if !strings.HasSuffix(file, "TXT"){
+            return 
+    }
+
     f, err := os.Open(file)
     if err != nil {
         Flog("[ERRO] 文件读取失败:", err.Error())
@@ -132,13 +129,11 @@ func Save2Mysql(file string){
         line, err := bufreader.ReadString('\n')
 
         if err == io.EOF{
-            Flog("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
             break
         }
-        count ++
 
         line = strings.Replace(line, "\r\n", "", -1)
-        fmt.Println("读取行：", count)
+
         info := make(map[string]string)
 
         kvs := strings.Split(line, ";")
@@ -150,10 +145,7 @@ func Save2Mysql(file string){
             }
 
             info[kv[0]] = kv[1]
-
         }
-
-        fmt.Println(info)
 
         err = M.SaveTbRecord(info)
         if err != nil {
@@ -161,18 +153,33 @@ func Save2Mysql(file string){
             return
             continue 
         }
-        
-        fmt.Println("SetStats"+time.Now().String())
-        err = M.SetStats(fmt.Sprintf("%s_%s", info["FormulaName"], info["Symbol"]))
-        if err != nil {
-            Flog("[ERRO]:写入stat失败 ", err)
-            return
-        }
 
-        fmt.Println(3)
-
-//        Flog("[INFO]写入数据成功", info)
+        // 保存成功
+        count ++
     }
+
+    // 没有添加记录
+    if count == 0 {
+        Flog("[INFO]:没有新记录被添加")
+        return
+    }
+
+    Flog("[INFO]: 共写入数据条数：", count)
+    // 存完 record 再计算stats
+    // 从文件名中得到策略名称
+    Flog("[INFO]:读取文件：", file)
+    fnames := strings.Split(path.Base(file), "#")
+    if len(fnames) <3 {
+        return
+    }
+    sname := strings.TrimLeft(fnames[0], "$")
+    
+    err = M.DoUpdateInfo(sname, fnames[1])
+    if err != nil {
+        Flog("[ERRO]:update info failed",err)
+    }
+
+    return
 }
 
 // getFileModTime retuens unix timestamp of `os.File.ModTime` by given path.
