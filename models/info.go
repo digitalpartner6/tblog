@@ -39,7 +39,8 @@ type Finfo struct {
     MaxYingLiTimes    int64   //  最大连续盈利次数
     MaxKuiSunTimes    int64   // 最大连续亏损次数
     CountSellMonths   int64   // 交易月数
-    RateShouYi  float64   // 月平均收益率
+    RateShouYi        float64   // 收益率
+    RateMonthShouYi   float64 // 月平均收益率
     RateYearShouYi    float64 // 年化收益率
     MaxJingLiRun      float64 // 最大净利润
     MaxHuiChePrice    float64 // 最大回撤
@@ -103,6 +104,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
+    sum_kui_sun = math.Abs(sum_kui_sun)
     fmt.Println(1)
 
     // 最大亏损
@@ -110,6 +112,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
+    max_kui_sun = math.Abs(max_kui_sun)
 
     // 亏损手数
     count_kui_sun_number, err := strconv.ParseFloat(kuisunInfo["count_kui_sun_number"], 64)
@@ -214,8 +217,12 @@ func DoUpdateInfo(fname, symbol string) (err error){
 
     // 交易天数
     duration := oldInfo.LastDate.Sub(oldInfo.StartDate)
-    count_sell_day := duration.Hours()/24
+    count_sell_day := math.Ceil(duration.Hours()/24)
+    // 交易月数 进一，不足一月数一月？
+    count_sell_months := math.Ceil(count_sell_day / 30.5)
 
+    // 月平均收益率
+    rate_month_shou_yi := jing_li_run/count_sell_months / capital
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
@@ -226,8 +233,8 @@ func DoUpdateInfo(fname, symbol string) (err error){
     finfo.JingLiRun = jing_li_run
     finfo.SumYingLi = sum_ying_li
     finfo.MaxYingLi = max_ying_li
-    finfo.SumKuiSun = math.Abs(sum_kui_sun)
-    finfo.MaxKuiSun = math.Abs(max_kui_sun)
+    finfo.SumKuiSun = sum_kui_sun
+    finfo.MaxKuiSun = max_kui_sun
     finfo.CountSellTimes = int64(count_sell_times)
     finfo.CountYingLiTimes = int64(count_ying_li_times)
     finfo.CountKuiSunTimes = int64(count_kui_sun_times)
@@ -245,6 +252,8 @@ func DoUpdateInfo(fname, symbol string) (err error){
     finfo.CountSellDay = int64(count_sell_day)
     finfo.AvgMonthShouYi = avg_month_shou_yi
     finfo.RateYearShouYi = rate_year_shou_yi
+    finfo.CountSellMonths = int64(count_sell_months)
+    finfo.RateMonthShouYi = rate_month_shou_yi
 
 
     _, err = Engine.Where("formula_name=? and symbol=?", fname, symbol).Update(finfo)
