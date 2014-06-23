@@ -98,30 +98,25 @@ func SaveTbRecord(info map[string]string) (err error){
     if !ok {
         return errors.New("[ERROR]field named BarNum no exists!")
     }
-    fmt.Println("xxxcccc", v)
     bar_num, err := strconv.ParseFloat(v, 64)
-    fmt.Println("xxxxx", bar_num, err)
 
     id := fmt.Sprintf("%s_%s_%s_%s_%s", formula_name, symbol, dateStr, timeStr, action)
 
     ex := &TbRecord{Id:id}
     has , err := Engine.Get(ex)
     if has {
-        fmt.Println(err)
         return nil
     }
 
     profit := 0.00
-    fmt.Println(action, action == "sell")
 
     // 算出利润
     if action == "sell" {
-        profit =  (price - entry_price)*float64(number)
+        profit =  (price - entry_price) * float64(number)
     } else if action == "buytocover" {
         profit = (entry_price - price) * float64(number)
     }
 
-    fmt.Println(profit)
 
     var isProfit int = 0
     if profit > 0 {
@@ -139,6 +134,65 @@ func SaveTbRecord(info map[string]string) (err error){
     sql := "REPLACE INTO `tb_record`(`id`, `formula_name`, `symbol`, `date`, `time`, `action`, `number`, `price`, `entry_price`, `now_position`, `profit`, `is_profit`, `bar_num`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     _, err = Engine.Exec(sql, id, formula_name, symbol, dateStr, timeStr, action, number, price, entry_price, now_position, profit, isProfit, bar_num)
 
+    if err != nil {
+        return
+    }
+
+    if isProfit == 2 {
+        return 
+    }
+
+    // 查出info
+    fmt.Println("--- update info -------------")
+
+    fInfo := new(Finfo)
+
+    has, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Get(fInfo)
+    if err != nil || !has {
+        return
+    }
+
+
+    updateInfo := new(Finfo)
+
+    updateInfo.LastDate = fInfo.LastDate
+    updateInfo.CounterKuiSun = fInfo.CounterKuiSun
+    updateInfo.CounterYingLi = fInfo.CounterYingLi
+    updateInfo.MaxKuiSunTimes = fInfo.MaxKuiSunTimes
+    updateInfo.MaxYingLiTimes = fInfo.MaxYingLiTimes
+
+    // 最后交易 时间
+    lastDate := fInfo.LastDate
+    insertDate, err := time.Parse("2006-01-02", dateStr)
+    if err != nil {
+        return
+    }
+
+    fmt.Println(" daddadaa", insertDate)
+    // 如果大于最新时间则更新
+    if insertDate.After(lastDate) {
+        updateInfo.LastDate = insertDate
+    }
+
+    // 最大连续盈/亏
+    if isProfit == 1 {
+        updateInfo.CounterKuiSun = fInfo.CounterKuiSun + 1
+        updateInfo.CounterYingLi = 0
+        
+        if updateInfo.CounterKuiSun > fInfo.MaxKuiSunTimes {
+            updateInfo.MaxKuiSunTimes = updateInfo.CounterKuiSun
+        }
+
+    } else if isProfit == 3 {
+        updateInfo.CounterKuiSun = 0
+        updateInfo.CounterYingLi = fInfo.CounterYingLi + 1
+        if updateInfo.CounterYingLi > fInfo.MaxYingLiTimes {
+            updateInfo.MaxYingLiTimes = updateInfo.CounterYingLi
+        }
+    }
+
+   
+    _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times").Update(updateInfo)
     if err != nil {
         return
     }
