@@ -58,6 +58,8 @@ func init(){
         os.Exit(2)
     }
 
+//    Engine.ShowSQL = true
+
     err = Engine.Sync(new(TbRecord))
     if err != nil {
         fmt.Println(err)
