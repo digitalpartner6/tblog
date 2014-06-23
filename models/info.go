@@ -131,6 +131,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
         avg_kui_sun = sum_kui_sun / count_kui_sun_number
     }
 
+
     // 盈亏比
     
     rate_ying_kui := 0.0
