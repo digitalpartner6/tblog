@@ -168,7 +168,7 @@ func Save2Mysql(file string){
     // 存完 record 再计算stats
     // 从文件名中得到策略名称
     Flog("[INFO]:读取文件：", file)
-    _, file = path.Split(file)
+    _, file = path.Split(filepath.ToSlash(file))
     fnames := strings.Split(path.Base(file), "#")
     if len(fnames) <3 {
         return
