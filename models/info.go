@@ -5,6 +5,7 @@ import(
     "strconv"
     "math"
     "time"
+    "errors"
 )
 
 type Finfo struct {
@@ -219,15 +220,31 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 交易天数
     duration := oldInfo.LastDate.Sub(oldInfo.StartDate)
     count_sell_day := math.Ceil(duration.Hours()/24)
+    if count_sell_day == 0 {
+        count_sell_day = 1
+    }
     // 交易月数 进一，不足一月数一月？
     count_sell_months := math.Ceil(count_sell_day / 30.5)
 
+    fmt.Println("count_sell_day, ==count_sell_months==========",count_sell_day,jing_li_run, capital, count_sell_months)
+
     // 月平均收益率
-    rate_month_shou_yi := jing_li_run/count_sell_months / capital
+    rate_month_shou_yi := math.Abs(jing_li_run)/count_sell_months / capital
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
     rate_year_shou_yi := math.Pow((count_sell_day/365), rate_shou_yi)
+
+    // 最大回撤百分比
+    rate_max_hui_che := 0.0
+    if max_jing_li_run > 0 {
+        rate_max_hui_che = (max_jing_li_run - jing_li_run) / max_jing_li_run
+    }
+
+   rate_year_shou_yi_max_hui_che := 0.0
+    if rate_max_hui_che > 0 {
+        rate_year_shou_yi_max_hui_che = rate_year_shou_yi / rate_max_hui_che
+    }
 
     finfo := new(Finfo)
     finfo.Remaining = remaining
@@ -255,13 +272,16 @@ func DoUpdateInfo(fname, symbol string) (err error){
     finfo.RateYearShouYi = rate_year_shou_yi
     finfo.CountSellMonths = int64(count_sell_months)
     finfo.RateMonthShouYi = rate_month_shou_yi
-
+    finfo.RateMaxHuiChe = rate_max_hui_che
+    finfo.RateYearShouYiMaxHuiChe = rate_year_shou_yi_max_hui_che
+  
 
     _, err = Engine.Where("formula_name=? and symbol=?", fname, symbol).Update(finfo)
     if err != nil {
         return
     }
 
+    fmt.Println("===== 更新finfo成功  ====")
 
     /*
 
@@ -375,10 +395,16 @@ func BaseInfo(fname, symbol string) (list map[string]string, err error){
         return
     }
 
+    if len(res) == 0 {
+        return nil, errors.New("数据不存在")
+    }
+
     list = make(map[string]string)
     for k,v := range res[0] {
         list[k] = string(v)
     }
+
+    fmt.Println(list)
 
     return
 }
