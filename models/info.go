@@ -160,7 +160,11 @@ func DoUpdateInfo(fname, symbol string) (err error){
         return
     }
     // 取最大净利润
+    
     max_jing_li_run = math.Max(max_jing_li_run, jing_li_run)
+    if max_jing_li_run == 0 {
+        max_jing_li_run = jing_li_run
+    }
 
     max_hui_che_price, err := strconv.ParseFloat(baseInfo["max_hui_che_price"], 64)
     if err != nil {
