@@ -230,14 +230,14 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 交易月数 进一，不足一月数一月？
     count_sell_months := math.Ceil(count_sell_day / 30.5)
 
-    fmt.Println("count_sell_day, ==count_sell_months==========",count_sell_day,jing_li_run, capital, count_sell_months)
+    fmt.Println("count_sell_day, ==count_sell_months==========",rate_shou_yi)
 
     // 月平均收益率
     rate_month_shou_yi := jing_li_run/count_sell_months / capital
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
-    rate_year_shou_yi := math.Pow((count_sell_day/365), rate_shou_yi)
+    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/rate_shou_yi)
 
     // 最大回撤百分比
     rate_max_hui_che := 0.0
