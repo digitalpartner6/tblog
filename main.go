@@ -122,6 +122,17 @@ func Save2Mysql(file string){
     }
     defer f.Close()
 
+    /*
+     Flog("[INFO]:读取文件：", file)
+    _, file = path.Split(filepath.ToSlash(file))
+    fnames := strings.Split(path.Base(file), "#")
+    if len(fnames) <3 {
+        return
+    }
+    sname := strings.TrimLeft(fnames[0], "$")
+    symbol := fnames[1]
+    */
+
     bufreader := bufio.NewReader(f)
 
     count := 0
@@ -150,9 +161,25 @@ func Save2Mysql(file string){
         err = M.SaveTbRecord(info)
         if err != nil {
             Flog("[ERRO] 写入数据库失败", err, info)
-            return
             continue 
         }
+
+
+        /*
+        err = M.DoUpdateInfo(sname, symbol)
+    if err != nil {
+        Flog("[ERRO]:update info failed",err)
+        continue
+    }
+
+    err = M.Save2Redis(sname, symbol)
+    if err != nil {
+        Flog("[ERRO]:save2redis failed!", err)
+        continue
+    }
+    */
+
+
 
         // 保存成功
         count ++
@@ -178,6 +205,13 @@ func Save2Mysql(file string){
     err = M.DoUpdateInfo(sname, fnames[1])
     if err != nil {
         Flog("[ERRO]:update info failed",err)
+        return
+    }
+
+    err = M.Save2Redis(sname, fnames[1])
+    if err != nil {
+        Flog("[ERRO]:save2redis failed!", err)
+        return
     }
 
     return

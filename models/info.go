@@ -6,7 +6,8 @@ import(
     "math"
     "time"
     "errors"
-)
+    "github.com/garyburd/redigo/redis"
+    )
 
 type Finfo struct {
     Id          int64     // ID
@@ -50,6 +51,59 @@ type Finfo struct {
     UpdateTime  time.Time   // 记录更新时间
 }
 
+func Save2Redis(fname, symbol string) (err error){
+
+    /*
+    info := new(Finfo)
+    a, err := Engine.Where("formula_name=? and symbol=?", fname, symbol).Get(info)
+    if !a {
+        return errors.New("记录不存在或查询失败:"+err.Error())
+    }
+    */
+
+    conn, err := redis.Dial("tcp", "192.168.0.80:6379")
+    if err != nil {
+        return 
+    }
+
+    fid, err := redis.String(conn.Do("GET", fmt.Sprintf("futures.strategy.code.to.id.%s%s", fname,symbol)))
+    if err != nil {
+        return
+    }
+
+    if fid == "" {
+        return
+    }
+
+    key := fmt.Sprintf("futures:%s",fid)
+    args := []interface{}{key}
+
+    sql := fmt.Sprintf("SELECT * FROM `finfo` WHERE formula_name=\"%s\" AND symbol=\"%s\" limit 1", fname, symbol)
+    res, err := Engine.Query(sql)
+    if err != nil {
+        return
+    }
+
+    if len(res) == 0 {
+        return errors.New("mysql记录不存在")
+    }
+
+    for k,v := range res[0] {
+        if k == "id" {
+            continue
+        }
+        args = append(args, k, string(v))
+    }
+
+    _, err = conn.Do("HMSET", args...)
+    if err != nil {
+        return
+    }
+
+    fmt.Println("Save2Redis ok!")
+
+    return
+}
 
 // 更新info信息
 func DoUpdateInfo(fname, symbol string) (err error){
@@ -58,35 +112,29 @@ func DoUpdateInfo(fname, symbol string) (err error){
         return 
     }
 
-    fmt.Println(1)
-
     // 总盈利
     sum_ying_li, err := strconv.ParseFloat(yingliInfo["sum_ying_li"], 64)
     if err != nil {
         return
     }
-    fmt.Println(1)
 
     // 最大盈利
     max_ying_li, err := strconv.ParseFloat(yingliInfo["max_ying_li"], 64)
     if err != nil {
         return
     }
-    fmt.Println(1)
     
     // 盈利次数
     count_ying_li_times, err := strconv.ParseFloat(yingliInfo["count_ying_li_times"], 64)
     if err != nil {
         return
     }
-    fmt.Println(1)
 
     // 盈利手数
     count_ying_li_number, err := strconv.ParseFloat(yingliInfo["count_ying_li_number"], 64)
     if err != nil {
         return
     }
-    fmt.Println(1)
 
     // 平均盈利
     avg_ying_li := 0.0
@@ -98,7 +146,6 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
-    fmt.Println(1)
 
     // 总亏损
     sum_kui_sun, err := strconv.ParseFloat(kuisunInfo["sum_kui_sun"], 64)
@@ -106,7 +153,6 @@ func DoUpdateInfo(fname, symbol string) (err error){
         return
     }
     sum_kui_sun = sum_kui_sun
-    fmt.Println(1)
 
     // 最大亏损
     max_kui_sun, err := strconv.ParseFloat(kuisunInfo["max_kui_sun"], 64)
@@ -237,7 +283,10 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
-    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/rate_shou_yi)
+    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/math.Abs(rate_shou_yi))
+    if rate_shou_yi < 0 {
+        rate_year_shou_yi = -rate_year_shou_yi
+    }
 
     // 最大回撤百分比
     rate_max_hui_che := 0.0

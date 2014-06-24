@@ -4,7 +4,7 @@ import(
     "time"
     "errors"
     "fmt"
-//    "math"
+    "math"
     "strconv"
 //    "fsnotice/util"
 )
@@ -105,7 +105,7 @@ func SaveTbRecord(info map[string]string) (err error){
     ex := &TbRecord{Id:id}
     has , err := Engine.Get(ex)
     if has {
-        return nil
+        return errors.New("record exists !!") 
     }
 
     profit := 0.00
@@ -191,8 +191,16 @@ func SaveTbRecord(info map[string]string) (err error){
         }
     }
 
+    // 最大回撤百分比
+    max_jing_li_run := math.Max((fInfo.MaxJingLiRun + profit), fInfo.MaxJingLiRun)
+    if max_jing_li_run == 0 {
+        updateInfo.MaxJingLiRun = fInfo.MaxJingLiRun
+    } else {
+        updateInfo.MaxJingLiRun = max_jing_li_run
+    }
+
    
-    _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times").Update(updateInfo)
+    _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run").Update(updateInfo)
     if err != nil {
         return
     }
