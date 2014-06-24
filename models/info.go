@@ -105,7 +105,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
-    sum_kui_sun = math.Abs(sum_kui_sun)
+    sum_kui_sun = sum_kui_sun
     fmt.Println(1)
 
     // 最大亏损
@@ -113,7 +113,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
-    max_kui_sun = math.Abs(max_kui_sun)
+    max_kui_sun = max_kui_sun
 
     // 亏损手数
     count_kui_sun_number, err := strconv.ParseFloat(kuisunInfo["count_kui_sun_number"], 64)
@@ -136,7 +136,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 盈亏比
     
     rate_ying_kui := 0.0
-    if avg_kui_sun > 0 {
+    if avg_kui_sun != 0 {
         rate_ying_kui = math.Abs(avg_ying_li/avg_kui_sun)
     }
 
@@ -176,7 +176,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
 
     // 净值
     jing_zhi := 0.0
-    if capital > 0 {
+    if capital != 0 {
         jing_zhi = (jing_li_run + capital)/capital
     }
 
@@ -206,7 +206,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
 
     // 收益率
     rate_shou_yi := 0.0
-    if capital > 0 {
+    if capital != 0 {
         rate_shou_yi = jing_li_run / capital
     }
 
@@ -241,12 +241,12 @@ func DoUpdateInfo(fname, symbol string) (err error){
 
     // 最大回撤百分比
     rate_max_hui_che := 0.0
-    if max_jing_li_run > 0 {
+    if max_jing_li_run != 0 {
         rate_max_hui_che = (max_jing_li_run - jing_li_run) / max_jing_li_run
     }
 
    rate_year_shou_yi_max_hui_che := 0.0
-    if rate_max_hui_che > 0 {
+    if rate_max_hui_che != 0 {
         rate_year_shou_yi_max_hui_che = rate_year_shou_yi / rate_max_hui_che
     }
 
