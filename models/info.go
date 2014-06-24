@@ -229,7 +229,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     fmt.Println("count_sell_day, ==count_sell_months==========",count_sell_day,jing_li_run, capital, count_sell_months)
 
     // 月平均收益率
-    rate_month_shou_yi := math.Abs(jing_li_run)/count_sell_months / capital
+    rate_month_shou_yi := jing_li_run/count_sell_months / capital
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
