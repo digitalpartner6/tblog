@@ -7,6 +7,7 @@ import(
     "math"
     "strconv"
 //    "fsnotice/util"
+    "github.com/garyburd/redigo/redis"
 )
 
 type TbRecord struct{
@@ -23,6 +24,148 @@ type TbRecord struct{
     Profit float64
     BarNum int32
     IsProfit int
+}
+
+
+// 取策略id
+func GetFuturesId(fname, symbol string) (fid string, err error){
+    conn, err := redis.Dial("tcp", "192.168.0.80:6379")
+    if err != nil {
+        fmt.Println("no way")
+        return
+    }
+
+    fid, err = redis.String(conn.Do("GET", fmt.Sprintf("futures.strategy.code.to.id.%s%s", fname,symbol)))
+    if err != nil {
+        return
+    }
+
+    return
+}
+
+func GetFeedId(t string) (rid string, err error) {
+    conn, err := redis.Dial("tcp", "192.168.0.80:6379")
+    if err != nil {
+        fmt.Println("no way")
+        return
+    }
+
+    defer conn.Close()
+
+    // 取id
+    ri, err := redis.Int64(conn.Do("INCR", "feed:counter"))
+    //ri, err := conn.Do("INCR", "feed:counter")
+    if err != nil {
+        return
+    }
+
+
+    rid = strconv.FormatInt(ri, 10)
+
+    if rid == "" {
+        err = errors.New("数据读取失败")
+        return
+    }
+
+    return rid+t, nil
+}
+
+func Record2Redis(recordId, fname, symbol string) (err error){
+
+    conn, err := redis.Dial("tcp", "192.168.0.80:6379")
+    if err != nil {
+        return
+    }
+    defer conn.Close()
+
+    fid, err := redis.String(conn.Do("GET", fmt.Sprintf("futures.strategy.code.to.id.%s%s", fname,symbol)))
+    if err != nil {
+        return
+    }
+
+    if fid == "" {
+        return errors.New("GetFuturesId empty")
+    }
+
+
+    // 是否已存在
+    siskey := fmt.Sprintf("futures:%s:all.record", fid)
+    sis, err := redis.Bool(conn.Do("SISMEMBER", siskey, recordId))
+    if err != nil {
+        return
+    }
+
+    if sis {
+        return errors.New("record exists !")
+    }
+
+
+    fmt.Println("Record2Redis start ..... .. ")
+
+
+    sql := fmt.Sprintf("select * from tb_record where id=\"%s\"", recordId)
+    res, err := Engine.Query(sql)
+    if err != nil {
+        return
+    }
+
+    if len(res) == 0 {
+        return errors.New("record info id empty")
+    }
+
+    rid, err := GetFeedId("46")
+    if err != nil {
+        return
+    }
+    // 存hash
+    key := fmt.Sprintf("futures.strategy.result:%s", rid)
+
+    info := make(map[string]string, 0)
+    args := []interface{}{key}
+    for k,v := range res[0] {
+        info[k] = string(v)
+        if k == "id" {
+            continue
+        }
+
+        args = append(args, k, string(v))
+    }
+
+    fmt.Println("save hash")
+
+
+    _, err = conn.Do("HMSET", args...)
+    if err != nil {
+        return
+    }
+
+    // 存列表
+    utime,err := time.Parse("2006-01-02 15:04:05", fmt.Sprintf("%s %s", info["date"], info["time"]))
+    if err != nil {
+        return
+    }
+
+    // daily. futures.strategy.result.by.result.id:[ futures.stragegy.id]:all
+    _, err = conn.Do("ZADD", fmt.Sprintf("daily.futures.strategy.result.by.result.id:%s:all", fid), strconv.FormatInt(utime.Unix(), 10), rid)
+    if err != nil {
+        return
+    }
+
+    // daily. futures.strategy.result.by.result.id:[ futures.stragegy.id]:[yyyy-mm-dd]
+    _, err = conn.Do("ZADD", fmt.Sprintf("daily.futures.strategy.result.by.result.id:%s:%s", fid, utime.Format("2006-01-02")),strconv.FormatInt(utime.Unix(), 10), rid)
+    if err != nil {
+        return
+    }
+
+    // 存到已存在set
+    _, err = conn.Do("SADD", siskey, recordId)
+    if err != nil {
+        return
+    }
+
+
+    fmt.Println("存record to redis ok")
+    return
 }
 
 func SaveTbRecord(info map[string]string) (err error){
@@ -138,6 +281,14 @@ func SaveTbRecord(info map[string]string) (err error){
         return
     }
 
+    fmt.Println("begin Record2Redis")
+
+    // 存到reids
+    err = Record2Redis(id, formula_name, symbol)
+    if err != nil {
+        return
+    }
+
     if isProfit == 2 {
         return 
     }
@@ -151,7 +302,6 @@ func SaveTbRecord(info map[string]string) (err error){
     if err != nil || !has {
         return
     }
-
 
     updateInfo := new(Finfo)
 
@@ -168,7 +318,6 @@ func SaveTbRecord(info map[string]string) (err error){
         return
     }
 
-    fmt.Println(" daddadaa", insertDate)
     // 如果大于最新时间则更新
     if insertDate.After(lastDate) {
         updateInfo.LastDate = insertDate
@@ -199,11 +348,38 @@ func SaveTbRecord(info map[string]string) (err error){
         updateInfo.MaxJingLiRun = max_jing_li_run
     }
 
+    // 交易后的余额，存入每天余额列表
+    updateInfo.Remaining = fInfo.Remaining + profit
    
-    _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run").Update(updateInfo)
+    _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining").Update(updateInfo)
     if err != nil {
         return
     }
 
+    // 保存日期记录
+    SaveDaliyData(formula_name, symbol, insertDate, updateInfo.Remaining)
+
     return 
+}
+
+// 保存日期记录
+func SaveDaliyData(formula_name, symbol string, date time.Time, remaining float64) (err error){
+    conn, err := redis.Dial("tcp", "192.168.0.80:6379")
+    if err != nil {
+        return 
+    }
+
+    defer conn.Close()
+
+    fid, err := GetFuturesId(formula_name, symbol)
+    if err != nil {
+        return
+    }
+
+    _, err = conn.Do("ZADD", fmt.Sprintf("futures:%s:daily.data", fid), remaining, date.Unix())
+    if err != nil {
+        return
+    }
+
+    return
 }

@@ -202,12 +202,14 @@ func Save2Mysql(file string){
     }
     sname := strings.TrimLeft(fnames[0], "$")
     
+    // 更新统计信息
     err = M.DoUpdateInfo(sname, fnames[1])
     if err != nil {
         Flog("[ERRO]:update info failed",err)
         return
     }
 
+    // 更新info到redis
     err = M.Save2Redis(sname, fnames[1])
     if err != nil {
         Flog("[ERRO]:save2redis failed!", err)

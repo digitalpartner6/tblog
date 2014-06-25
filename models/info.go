@@ -66,6 +66,8 @@ func Save2Redis(fname, symbol string) (err error){
         return 
     }
 
+    defer conn.Close()
+
     fid, err := redis.String(conn.Do("GET", fmt.Sprintf("futures.strategy.code.to.id.%s%s", fname,symbol)))
     if err != nil {
         return
@@ -89,7 +91,7 @@ func Save2Redis(fname, symbol string) (err error){
     }
 
     for k,v := range res[0] {
-        if k == "id" {
+        if k == "id"{
             continue
         }
         args = append(args, k, string(v))
