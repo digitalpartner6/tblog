@@ -291,7 +291,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 最大回撤百分比
     rate_max_hui_che := 0.0
     if max_jing_li_run != 0 {
-        rate_max_hui_che = (max_jing_li_run - jing_li_run) / max_jing_li_run *100
+        rate_max_hui_che = (max_jing_li_run - jing_li_run) / (max_jing_li_run+capital) *100
     }
 
    rate_year_shou_yi_max_hui_che := 0.0
