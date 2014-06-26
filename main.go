@@ -38,9 +38,6 @@ func init(){
 func main(){
    exit := make(chan bool)
 
-   Loger.Info("sss")
-    return
-
     /*
     list := make([]string, 0)
     for  i := 0; i< 10000; i++ {
