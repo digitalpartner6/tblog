@@ -500,12 +500,35 @@ func SaveDaliyData(conn redis.Conn, formula_name, symbol string, date time.Time,
     return
 }
 
+// 策略infokey
+func GetFuturesInfoKey(fid string) string {
+    return fmt.Sprintf("futures:%s",fid)
+}
+
+// 取MySQL信息info
+func GetFuturesMysqlInfo(fname, symbol string) (info map[string]string, err error) {
+    sql := fmt.Sprintf("SELECT * FROM `finfo` WHERE formula_name=\"%s\" AND symbol=\"%s\" limit 1", fname, symbol)
+    res, err := Engine.Query(sql)
+    if err != nil {
+        return
+    }
+    if len(res) == 0 {
+        err = errors.New("mysql记录不存在")
+        return
+    }
+
+    list := make(map[string]string, 0)
+    for k,v := range res[0]{
+        list[k] = string(v) 
+    }
+
+    return
+}
+
 // 保存info信息到redis
 func Save2Redis(conn redis.Conn, fname, symbol string) (err error){
 
-    conn = RedisPool.Get()
-
-    fid, err := redis.String(conn.Do("GET", fmt.Sprintf("futures.strategy.code.to.id.%s%s", fname,symbol)))
+    fid, err := GetFuturesId(conn, fname, symbol)
     if err != nil {
         return
     }
@@ -514,24 +537,15 @@ func Save2Redis(conn redis.Conn, fname, symbol string) (err error){
         return
     }
 
-    key := fmt.Sprintf("futures:%s",fid)
+    key := GetFuturesInfoKey(fid)
     args := []interface{}{key}
 
-    sql := fmt.Sprintf("SELECT * FROM `finfo` WHERE formula_name=\"%s\" AND symbol=\"%s\" limit 1", fname, symbol)
-    res, err := Engine.Query(sql)
-    if err != nil {
-        return
-    }
-
-    if len(res) == 0 {
-        return errors.New("mysql记录不存在")
-    }
-
-    for k,v := range res[0] {
+    info, err := GetFuturesMysqlInfo(fname, symbol)
+    for k,v := range info {
         if k == "id"{
             continue
         }
-        args = append(args, k, string(v))
+        args = append(args, k, v)
     }
 
     _, err = conn.Do("HMSET", args...)
@@ -544,7 +558,7 @@ func Save2Redis(conn redis.Conn, fname, symbol string) (err error){
     return
 }
 
-// 更新info信息
+// 更新info信息mysql
 func DoUpdateInfo(fname, symbol string) (err error){
     yingliInfo, err := YingliInfo(fname, symbol)
     if err != nil {
@@ -591,14 +605,12 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
-    sum_kui_sun = sum_kui_sun
 
     // 最大亏损
     max_kui_sun, err := strconv.ParseFloat(kuisunInfo["max_kui_sun"], 64)
     if err != nil {
         return
     }
-    max_kui_sun = max_kui_sun
 
     // 亏损手数
     count_kui_sun_number, err := strconv.ParseFloat(kuisunInfo["count_kui_sun_number"], 64)
@@ -656,13 +668,13 @@ func DoUpdateInfo(fname, symbol string) (err error){
         return
     }
     // 最大回撤金额
-    max_hui_che_price = math.Max(max_hui_che_price, (max_jing_li_run - jing_li_run))
+    //max_hui_che_price = math.Max(max_hui_che_price, (max_jing_li_run - jing_li_run))
     
 
     // 净值
     jing_zhi := 0.0
     if capital != 0 {
-        jing_zhi = (jing_li_run + capital)/capital
+        jing_zhi = (jing_li_run + capital)/capital * 100
     }
 
     sumInfo, err := SumInfo(fname, symbol)
@@ -685,14 +697,14 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 胜率
     rate_sheng_lv := 0.0
     if count_sell_times > 0 {
-      rate_sheng_lv = count_ying_li_times / count_sell_times
+      rate_sheng_lv = count_ying_li_times / count_sell_times * 100
     }
 
 
     // 收益率
     rate_shou_yi := 0.0
     if capital != 0 {
-        rate_shou_yi = jing_li_run / capital
+        rate_shou_yi = jing_li_run / capital * 100
     }
 
     // 余额
@@ -715,27 +727,28 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 交易月数 进一，不足一月数一月？
     count_sell_months := math.Ceil(count_sell_day / 30.5)
 
-    fmt.Println("count_sell_day, ==count_sell_months==========",rate_shou_yi)
 
     // 月平均收益率
-    rate_month_shou_yi := jing_li_run/count_sell_months / capital
+    rate_month_shou_yi := jing_li_run/count_sell_months / capital * 100
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
-    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/math.Abs(rate_shou_yi))
+    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/rate_shou_yi)
     if rate_shou_yi < 0 {
         rate_year_shou_yi = -rate_year_shou_yi
     }
 
+    /*
     // 最大回撤百分比
     rate_max_hui_che := 0.0
     if max_jing_li_run != 0 {
         rate_max_hui_che = (max_jing_li_run - jing_li_run) / max_jing_li_run
     }
+    */
 
    rate_year_shou_yi_max_hui_che := 0.0
-    if rate_max_hui_che != 0 {
-        rate_year_shou_yi_max_hui_che = rate_year_shou_yi / rate_max_hui_che
+    if oldInfo.RateMaxHuiChe != 0 {
+        rate_year_shou_yi_max_hui_che = rate_year_shou_yi / oldInfo.RateMaxHuiChe * 100
     }
 
     finfo := new(Finfo)
@@ -764,7 +777,6 @@ func DoUpdateInfo(fname, symbol string) (err error){
     finfo.RateYearShouYi = rate_year_shou_yi
     finfo.CountSellMonths = int64(count_sell_months)
     finfo.RateMonthShouYi = rate_month_shou_yi
-    finfo.RateMaxHuiChe = rate_max_hui_che
     finfo.RateYearShouYiMaxHuiChe = rate_year_shou_yi_max_hui_che
   
 

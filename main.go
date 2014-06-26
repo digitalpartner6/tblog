@@ -235,8 +235,10 @@ func Save2Mysql(file string){
         return
     }
 
+    conn := M.RedisPool.Get()
+    defer conn.Close()
     // 更新info到redis
-    err = M.Save2Redis(sname, fnames[1])
+    err = M.Save2Redis(conn, sname, fnames[1])
     if err != nil {
         Flog("[ERRO]:save2redis failed!", err)
         return
