@@ -217,7 +217,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
         return
     }
     // 最大回撤金额
-    max_hui_che_price = math.Max(max_hui_che_price, (max_jing_li_run - jing_li_run))
+    //max_hui_che_price = math.Max(max_hui_che_price, (max_jing_li_run - jing_li_run))
     
 
     // 净值
@@ -288,15 +288,17 @@ func DoUpdateInfo(fname, symbol string) (err error){
         rate_year_shou_yi = -rate_year_shou_yi
     }
 
+    /*
     // 最大回撤百分比
     rate_max_hui_che := 0.0
     if max_jing_li_run != 0 {
         rate_max_hui_che = (max_jing_li_run - jing_li_run) / (max_jing_li_run+capital) *100
     }
+    */
 
    rate_year_shou_yi_max_hui_che := 0.0
-    if rate_max_hui_che != 0 {
-        rate_year_shou_yi_max_hui_che = rate_year_shou_yi / rate_max_hui_che *100
+    if oldInfo.RateMaxHuiChe != 0 {
+        rate_year_shou_yi_max_hui_che = rate_year_shou_yi / oldInfo.RateMaxHuiChe *100
     }
 
     finfo := new(Finfo)
@@ -325,9 +327,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     finfo.RateYearShouYi = rate_year_shou_yi
     finfo.CountSellMonths = int64(count_sell_months)
     finfo.RateMonthShouYi = rate_month_shou_yi
-    finfo.RateMaxHuiChe = rate_max_hui_che
     finfo.RateYearShouYiMaxHuiChe = rate_year_shou_yi_max_hui_che
-  
 
     _, err = Engine.Where("formula_name=? and symbol=?", fname, symbol).Update(finfo)
     if err != nil {

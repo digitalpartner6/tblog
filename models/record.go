@@ -340,18 +340,32 @@ func SaveTbRecord(info map[string]string) (err error){
         }
     }
 
+    // 净利润
+    updateInfo.JingLiRun = fInfo.JingLiRun + profit
+
     // 最大净利润
-    max_jing_li_run := math.Max((fInfo.MaxJingLiRun + profit), fInfo.MaxJingLiRun)
+    max_jing_li_run := math.Max(updateInfo.JingLiRun, fInfo.MaxJingLiRun)
     if max_jing_li_run == 0 {
         updateInfo.MaxJingLiRun = fInfo.MaxJingLiRun
     } else {
         updateInfo.MaxJingLiRun = max_jing_li_run
     }
 
+    // 最大回撤金额
+    max_hui_che := max_jing_li_run - updateInfo.JingLiRun
+    updateInfo.MaxHuiChePrice = math.Max(fInfo.MaxHuiChePrice, max_hui_che)
+
     // 交易后的余额，存入每天余额列表
     updateInfo.Remaining = fInfo.Remaining + profit
+
+    // 最大回撤百分比
+    if isProfit == 1 {
+        updateInfo.RateMaxHuiChe = (updateInfo.MaxJingLiRun - updateInfo.JingLiRun) / (updateInfo.MaxJingLiRun + fInfo.Capital) * 100
+        _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining, max_hui_che_price, jing_li_run, RateMaxHuiChe").Update(updateInfo)
+    } else {
    
-    _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining").Update(updateInfo)
+        _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining, max_hui_che_price, jing_li_run").Update(updateInfo)
+    }
     if err != nil {
         return
     }
