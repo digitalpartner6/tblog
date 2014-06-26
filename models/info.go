@@ -154,14 +154,12 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
-    sum_kui_sun = sum_kui_sun
 
     // 最大亏损
     max_kui_sun, err := strconv.ParseFloat(kuisunInfo["max_kui_sun"], 64)
     if err != nil {
         return
     }
-    max_kui_sun = max_kui_sun
 
     // 亏损手数
     count_kui_sun_number, err := strconv.ParseFloat(kuisunInfo["count_kui_sun_number"], 64)
@@ -189,7 +187,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     }
 
     // 净利润
-    jing_li_run := sum_ying_li - math.Abs(sum_kui_sun)
+    jing_li_run := sum_ying_li + sum_kui_sun
 
     baseInfo, err := BaseInfo(fname, symbol)
     if err != nil {
@@ -293,12 +291,12 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 最大回撤百分比
     rate_max_hui_che := 0.0
     if max_jing_li_run != 0 {
-        rate_max_hui_che = (max_jing_li_run - jing_li_run) / max_jing_li_run
+        rate_max_hui_che = (max_jing_li_run - jing_li_run) / max_jing_li_run *100
     }
 
    rate_year_shou_yi_max_hui_che := 0.0
     if rate_max_hui_che != 0 {
-        rate_year_shou_yi_max_hui_che = rate_year_shou_yi / rate_max_hui_che
+        rate_year_shou_yi_max_hui_che = rate_year_shou_yi / rate_max_hui_che *100
     }
 
     finfo := new(Finfo)
