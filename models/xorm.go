@@ -1,5 +1,6 @@
 package models
 
+/*
 import(
     "fmt"
     "path"
@@ -67,3 +68,4 @@ func init(){
     }
 
 }
+*/
