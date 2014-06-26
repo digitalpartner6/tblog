@@ -26,7 +26,7 @@ var Loger *logs.BeeLogger
 func init(){
     Loger = logs.NewLogger(10000)
     Loger.SetLevel(1)
-    err := Loger.SetLogger("file", `{"filename":"test.log"}`)
+    err := Loger.SetLogger("console", "")
     if err != nil {
         fmt.Println("can not init console log", err)
     }
@@ -54,8 +54,8 @@ func main(){
     */
 
     //DirPath = "./TBlist"
-    //initData(DirPath)
-    //NewWatcher(DirPath)
+    initData(DirPath)
+    NewWatcher(DirPath)
 
     for {
       select{
