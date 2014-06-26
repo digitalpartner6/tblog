@@ -361,7 +361,7 @@ func SaveTbRecord(info map[string]string) (err error){
     // 最大回撤百分比
     if isProfit == 1 {
         updateInfo.RateMaxHuiChe = (updateInfo.MaxJingLiRun - updateInfo.JingLiRun) / (updateInfo.MaxJingLiRun + fInfo.Capital) * 100
-        _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining, max_hui_che_price, jing_li_run, RateMaxHuiChe").Update(updateInfo)
+        _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining, max_hui_che_price, jing_li_run, rate_max_hui_che").Update(updateInfo)
     } else {
    
         _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining, max_hui_che_price, jing_li_run").Update(updateInfo)
