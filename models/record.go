@@ -340,7 +340,7 @@ func SaveTbRecord(info map[string]string) (err error){
         }
     }
 
-    // 最大回撤百分比
+    // 最大净利润
     max_jing_li_run := math.Max((fInfo.MaxJingLiRun + profit), fInfo.MaxJingLiRun)
     if max_jing_li_run == 0 {
         updateInfo.MaxJingLiRun = fInfo.MaxJingLiRun
