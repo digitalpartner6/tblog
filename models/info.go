@@ -248,14 +248,14 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 胜率
     rate_sheng_lv := 0.0
     if count_sell_times > 0 {
-      rate_sheng_lv = count_ying_li_times / count_sell_times
+      rate_sheng_lv = count_ying_li_times / count_sell_times * 100
     }
 
 
     // 收益率
     rate_shou_yi := 0.0
     if capital != 0 {
-        rate_shou_yi = jing_li_run / capital
+        rate_shou_yi = jing_li_run / capital * 100
     }
 
     // 余额
@@ -281,11 +281,11 @@ func DoUpdateInfo(fname, symbol string) (err error){
     fmt.Println("count_sell_day, ==count_sell_months==========",rate_shou_yi)
 
     // 月平均收益率
-    rate_month_shou_yi := jing_li_run/count_sell_months / capital
+    rate_month_shou_yi := jing_li_run/count_sell_months / capital*100
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
-    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/math.Abs(rate_shou_yi*100))
+    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/math.Abs(rate_shou_yi))
     if rate_shou_yi < 0 {
         rate_year_shou_yi = -rate_year_shou_yi
     }
