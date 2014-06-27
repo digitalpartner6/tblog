@@ -511,6 +511,14 @@ func SaveDaliyData(conn redis.Conn, formula_name, symbol string, date time.Time,
         return
     }
 
+    // 月记录
+    month := date.Format("2006-01")
+    monthTime, err := time.Parse("2006-01", month)
+    if err != nil {
+        return
+    }
+    _, err = conn.Do("ZADD", fmt.Sprintf("futures:%s:month.data", fid), remaining, monthTime.Unix())
+
     return
 }
 
