@@ -85,6 +85,9 @@ func NewWatcher(pathstr string){
         for {
             select{
               case e := <-watcher.Event:
+                  if e.IsDelete() {
+                      continue
+                  }
 
                   // Prevent duplicated builds.
 				if buildPeriod.Add(1 * time.Second).After(time.Now()) {
