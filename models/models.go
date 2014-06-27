@@ -471,7 +471,7 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
     _, err = conn.Do("ZADD", fmt.Sprintf("daily.futures.strategy.result.by.result.id:%s:all", fid), strconv.FormatInt(utime.Unix(), 10), rid)
     if err != nil {
         return
-        
+    }
 
     // daily. futures.strategy.result.by.result.id:[ futures.stragegy.id]:[yyyy-mm-dd]
     _, err = conn.Do("ZADD", fmt.Sprintf("daily.futures.strategy.result.by.result.id:%s:%s", fid, utime.Format("2006-01-02")),strconv.FormatInt(utime.Unix(), 10), rid)
