@@ -530,13 +530,11 @@ func GetFuturesMysqlInfo(fname, symbol string) (info map[string]string, err erro
         err = errors.New("mysql记录不存在")
         return
     }
-    fmt.Println("resres", res)
 
+    info = make(map[string]string, 0)
     for k,v := range res[0]{
         info[k] = string(v)
     }
-
-    fmt.Println("infoinfo",info)
 
     return info, nil
 }
