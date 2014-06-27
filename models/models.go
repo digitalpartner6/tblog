@@ -522,12 +522,11 @@ func GetFuturesMysqlInfo(fname, symbol string) (info map[string]string, err erro
         return
     }
 
-    list := make(map[string]string, 0)
     for k,v := range res[0]{
-        list[k] = string(v) 
+        info[k] = string(v) 
     }
 
-    return
+    return 
 }
 
 // 保存info信息到redis
