@@ -521,7 +521,7 @@ func GetFuturesInfoKey(fid string) string {
 
 // 取MySQL信息info
 func GetFuturesMysqlInfo(fname, symbol string) (info map[string]string, err error) {
-    sql := fmt.Sprintf("SELECT * FROM `finfo` WHERE formula_name=\"%s\" AND symbol=\"%s\" limit 1", fname, symbol)
+    sql := fmt.Sprintf("SELECT * FROM `finfo` WHERE formula_name=\"%s\" AND symbol=\"%s\"", fname, symbol)
     res, err := Engine.Query(sql)
     if err != nil {
         return
@@ -530,13 +530,13 @@ func GetFuturesMysqlInfo(fname, symbol string) (info map[string]string, err erro
         err = errors.New("mysql记录不存在")
         return
     }
-    fmt.Println(res)
+    fmt.Println("resres", res)
 
     for k,v := range res[0]{
         info[k] = string(v)
     }
 
-    fmt.Println(info)
+    fmt.Println("infoinfo",info)
 
     return info, nil
 }
