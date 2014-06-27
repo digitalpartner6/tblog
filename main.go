@@ -167,6 +167,9 @@ func Save2Mysql(file string){
         info := make(map[string]string)
 
         kvs := strings.Split(line, ";")
+        if len(kvs) < 5 {
+            continue
+        }
         for i := 0; i< len(kvs); i++{
             kv := strings.Split(kvs[i], "=")
             if len(kv) != 2 {
