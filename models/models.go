@@ -224,6 +224,8 @@ func SaveTbRecord(info map[string]string) (err error){
     ex := &TbRecord{Id:id}
     has , err := Engine.Get(ex)
     if has {
+        // @todo 已存在提示
+        return
         return errors.New("record exists !!") 
     }
 
