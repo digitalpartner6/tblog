@@ -25,35 +25,18 @@ var Loger *logs.BeeLogger
 
 func init(){
     Loger = logs.NewLogger(10000)
-    Loger.SetLevel(1)
     err := Loger.SetLogger("console", "")
     if err != nil {
         fmt.Println("can not init console log", err)
     }
-
 
     DirPath = M.Cfg.MustValue("base", "path")
 }
 
 func main(){
    exit := make(chan bool)
+   Loger.Info("start ...")
 
-    /*
-    list := make([]string, 0)
-    for  i := 0; i< 10000; i++ {
-    k, e := M.GetFuturesId("a_aRbreak_6w", "IF888")
-    if e != nil {
-        panic(e)
-    }
-    list = append(list, k)
-    
-    fmt.Print(".")
-//    fmt.Println(k)
-}
-    fmt.Println(len(list))
-    */
-
-    //DirPath = "./TBlist"
     initData(DirPath)
     NewWatcher(DirPath)
 

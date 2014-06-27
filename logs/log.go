@@ -36,8 +36,6 @@ func init(){
     if err != nil {
         fmt.Println("init console log error:", err)
     }
-    BeeLogger.Info("info")
-    BeeLogger.Error("error")
 }
 
 // SetLogger sets a new logger.
