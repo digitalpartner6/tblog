@@ -554,6 +554,9 @@ func Save2Redis(conn redis.Conn, fname, symbol string) (err error){
         args = append(args, k, v)
     }
 
+    fmt.Println(args)
+    fmt.Println(len(args))
+
     _, err = conn.Do("HMSET", args...)
     if err != nil {
         return
