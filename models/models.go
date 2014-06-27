@@ -495,7 +495,7 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
 
 // 更新最新记录id
 func SaveMaxResultId(conn redis.Conn, rid string) (err error){
-    _, err = conn.Do("SET", "futures.stragegy.max.result.id", rid)
+    _, err = conn.Do("SET", "futures.strategy.max.result.id", rid)
     return
 }
 
