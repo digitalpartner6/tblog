@@ -464,7 +464,7 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
     }
 
     // 最新id
-    SaveMaxResultId(conn, rid)
+    //SaveMaxResultId(conn, rid)
 
     // 存列表
     utime,err := time.Parse("2006-01-02 15:04:05", fmt.Sprintf("%s %s", info["date"], info["time"]))
