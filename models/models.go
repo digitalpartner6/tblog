@@ -121,7 +121,7 @@ func NewRedis(server, pass string) *redis.Pool {
     }
 }
 
-// 错误退出 
+// 错误退出
 func checkErr(err error){
     if err != nil {
         panic(err)
@@ -226,7 +226,7 @@ func SaveTbRecord(info map[string]string) (err error){
     if has {
         // @todo 已存在提示
         return
-        return errors.New("record exists !!") 
+        return errors.New("record exists !!")
     }
 
     profit := 0.00
@@ -265,7 +265,7 @@ func SaveTbRecord(info map[string]string) (err error){
     }
 
     if isProfit == 2 {
-        return 
+        return
     }
 
     // 查出info
@@ -301,7 +301,7 @@ func SaveTbRecord(info map[string]string) (err error){
     if isProfit == 1 {
         updateInfo.CounterKuiSun = fInfo.CounterKuiSun + 1
         updateInfo.CounterYingLi = 0
-        
+
         if updateInfo.CounterKuiSun > fInfo.MaxKuiSunTimes {
             updateInfo.MaxKuiSunTimes = updateInfo.CounterKuiSun
         }
@@ -337,7 +337,7 @@ func SaveTbRecord(info map[string]string) (err error){
         updateInfo.RateMaxHuiChe = (updateInfo.MaxJingLiRun - updateInfo.JingLiRun) / (updateInfo.MaxJingLiRun + fInfo.Capital) * 100
         _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining, max_hui_che_price, jing_li_run, rate_max_hui_che").Update(updateInfo)
     } else {
-   
+
         _, err = Engine.Where("formula_name=? and symbol=?", formula_name, symbol).Cols("last_date, counter_ying_li, counter_kui_sun, max_ying_li_times, max_kui_sun_times, max_jing_li_run, remaining, max_hui_che_price, jing_li_run").Update(updateInfo)
     }
     if err != nil {
@@ -350,7 +350,7 @@ func SaveTbRecord(info map[string]string) (err error){
         return
     }
 
-    return 
+    return
 }
 
 // 取策略id
@@ -420,7 +420,7 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
         return
     }
 
-    // 已存在退出 
+    // 已存在退出
     if sis {
         // @todo 已存在提示
         // return errors.New("record exists !")
@@ -463,6 +463,9 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
         return
     }
 
+    // 最新id
+    SaveMaxResultId(conn, rid)
+
     // 存列表
     utime,err := time.Parse("2006-01-02 15:04:05", fmt.Sprintf("%s %s", info["date"], info["time"]))
     if err != nil {
@@ -487,6 +490,12 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
         return
     }
 
+    return
+}
+
+// 更新最新记录id
+func SaveMaxResultId(conn redis.Conn, rid string) (err error){
+    _, err = conn.Do("SET", "futures.stragegy.max.result.id", rid)
     return
 }
 
@@ -521,12 +530,15 @@ func GetFuturesMysqlInfo(fname, symbol string) (info map[string]string, err erro
         err = errors.New("mysql记录不存在")
         return
     }
+    fmt.Println(res)
 
     for k,v := range res[0]{
-        info[k] = string(v) 
+        info[k] = string(v)
     }
 
-    return 
+    fmt.Println(info)
+
+    return info, nil
 }
 
 // 保存info信息到redis
@@ -572,7 +584,7 @@ func Save2Redis(conn redis.Conn, fname, symbol string) (err error){
 func DoUpdateInfo(fname, symbol string) (err error){
     yingliInfo, err := YingliInfo(fname, symbol)
     if err != nil {
-        return 
+        return
     }
 
     // 总盈利
@@ -586,7 +598,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
-    
+
     // 盈利次数
     count_ying_li_times, err := strconv.ParseFloat(yingliInfo["count_ying_li_times"], 64)
     if err != nil {
@@ -641,7 +653,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
 
 
     // 盈亏比
-    
+
     rate_ying_kui := 0.0
     if avg_kui_sun != 0 {
         rate_ying_kui = math.Abs(avg_ying_li/avg_kui_sun)
@@ -667,7 +679,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
         return
     }
     // 取最大净利润
-    
+
     max_jing_li_run = math.Max(max_jing_li_run, jing_li_run)
     if max_jing_li_run == 0 {
         max_jing_li_run = jing_li_run
@@ -679,7 +691,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     }
     // 最大回撤金额
     //max_hui_che_price = math.Max(max_hui_che_price, (max_jing_li_run - jing_li_run))
-    
+
 
     // 净值
     jing_zhi := 0.0
@@ -691,7 +703,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     if err != nil {
         return
     }
-    
+
     // 总交易次数
     count_sell_times, err := strconv.ParseFloat(sumInfo["count_sell_times"], 64)
     if err != nil {
@@ -720,7 +732,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 余额
     remaining := capital + jing_li_run
 
-  
+
     oldInfo := new(Finfo)
     has, err := Engine.Where("formula_name=? and symbol=?", fname, symbol).Get(oldInfo)
     if err != nil || !has{
@@ -788,7 +800,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     finfo.CountSellMonths = int64(count_sell_months)
     finfo.RateMonthShouYi = rate_month_shou_yi
     finfo.RateYearShouYiMaxHuiChe = rate_year_shou_yi_max_hui_che
-  
+
 
     _, err = Engine.Where("formula_name=? and symbol=?", fname, symbol).Update(finfo)
     if err != nil {
@@ -837,7 +849,7 @@ func YingliInfo(fname, symbol string) (list map[string]string, err error){
 
     fmt.Println(list)
 
-    return 
+    return
 }
 
  /**
@@ -867,7 +879,7 @@ func KuiSunInfo(fname, symbol string) (list map[string]string, err error){
 
     fmt.Println(list)
 
-    return 
+    return
 }
 
 /**
@@ -891,7 +903,7 @@ func SumInfo(fname, symbol string) (list map[string]string, err error){
 
     fmt.Println(list)
 
-    return 
+    return
 }
 
 /**
