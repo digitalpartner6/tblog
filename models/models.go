@@ -443,6 +443,8 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
     key := GetRecordInfoKey(rid)
 
     args := []interface{}{key}
+    args = append(args, "id", rid, "futures_id", fid)
+
     info := make(map[string]string, 0)
     for k,v := range res[0] {
         info[k] = string(v)
