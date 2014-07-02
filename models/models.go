@@ -351,6 +351,13 @@ func SaveTbRecord(info map[string]string) (err error){
         return
     }
 
+    //保存月净利润
+    err = SaveMonthProfit(conn, formula_name, symbol, insertDate, updateInfo.JingLiRun)
+    if err != nil {
+        return
+    }
+
+
     return
 }
 
@@ -520,6 +527,23 @@ func SaveDaliyData(conn redis.Conn, formula_name, symbol string, date time.Time,
         return
     }
     _, err = conn.Do("ZADD", fmt.Sprintf("futures:%s:month.data", fid), remaining, monthTime.Unix())
+
+    return
+}
+
+// 保存每月净利润
+func SaveMonthProfit(conn redis.Conn, formula_name, symbol string, date time.Time, jingLiRun float64)(err error){
+    fid, err := GetFuturesId(conn, formula_name, symbol)
+    if err != nil {
+        return
+    }
+
+    month := date.Format("2006-01")
+    monthTime, err := time.Parse("2006-01", month)
+    if err != nil {
+        return
+    }
+    _, err = conn.Do("ZADD", fmt.Sprintf("futures:%s:month.netprofit.data", fid), jingLiRun, monthTime.Unix())
 
     return
 }
@@ -827,6 +851,18 @@ func DoUpdateInfo(fname, symbol string) (err error){
     }
 
     */
+    return
+}
+
+// 夏普指数
+func xiapu(conn redis.Conn, fname, symbol string) (xp float64, err error){
+    fid, err := GetFuturesId(conn, fname, symbol)
+    if err != nil {
+        return
+    }
+
+    conn.Do("ZANGE", fmt.Sprintf("futures:%s:month.netprofit.data", fid), 1, 1)
+
     return
 }
 
