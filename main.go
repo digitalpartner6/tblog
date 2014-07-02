@@ -37,6 +37,14 @@ func main(){
    exit := make(chan bool)
    Loger.Info("start ...")
 
+   /*
+   conn := M.RedisPool.Get()
+   defer conn.Close()
+
+   M.Xiapu(conn, "a_aRbreak_6w", "IF888")
+
+   return
+   */
     initData(DirPath)
     NewWatcher(DirPath)
 

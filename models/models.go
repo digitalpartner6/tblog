@@ -59,6 +59,7 @@ type Finfo struct {
     RateMaxHuiChe     float64 // 最大回撤百分比
     RateYearShouYiMaxHuiChe   float64 // 年化收益率/最大回撤百分比
     UpdateTime  time.Time   // 记录更新时间
+    Xiapu       float64
 }
 
 func init(){
@@ -833,6 +834,16 @@ func DoUpdateInfo(fname, symbol string) (err error){
     finfo.RateMonthShouYi = rate_month_shou_yi
     finfo.RateYearShouYiMaxHuiChe = rate_year_shou_yi_max_hui_che
 
+    // 夏普指数
+    conn := RedisPool.Get()
+    defer conn.Close()
+    xiapu, err := Xiapu(conn, fname, symbol)
+    if err != nil {
+        return
+    }
+
+    finfo.Xiapu = xiapu
+
 
     _, err = Engine.Where("formula_name=? and symbol=?", fname, symbol).Update(finfo)
     if err != nil {
@@ -855,14 +866,42 @@ func DoUpdateInfo(fname, symbol string) (err error){
 }
 
 // 夏普指数
-func xiapu(conn redis.Conn, fname, symbol string) (xp float64, err error){
+func Xiapu(conn redis.Conn, fname, symbol string) (xp float64, err error){
     fid, err := GetFuturesId(conn, fname, symbol)
     if err != nil {
         return
     }
 
-    conn.Do("ZANGE", fmt.Sprintf("futures:%s:month.netprofit.data", fid), 1, 1)
+    res, err := redis.Strings(conn.Do("ZRANGE", fmt.Sprintf("futures:%s:month.netprofit.data", fid), 0, -1, "withscores"))
 
+    // profits
+    profits := make([]float64,0)
+    count := 0
+    totalProfits := 0.0
+
+    for i := 0; i< len(res); i++ {
+        if i%2 == 1 {
+            f, _ := strconv.ParseFloat(res[i], 64)
+            profits = append(profits, f)
+            count ++
+            totalProfits += f
+        }
+    }
+
+    // 平均值
+    avgProfit := totalProfits/float64(count)
+
+    // 平均值的差
+    // 平方和
+    powSum := 0.0
+    for i := 0; i<len(profits); i++{
+        powSum += math.Pow((profits[i] - avgProfit), 2)
+    }
+    //  平均
+    xp = math.Sqrt(powSum/float64(count))
+
+//    fmt.Println(fmt.Sprintf("%.2f, %d, %.2f",totalProfits, count, avgProfit), profits)
+//    fmt.Println(fmt.Sprintf("%.2f,%.2f, %.2f",powSum, powSum/float64(count),xp))
     return
 }
 
