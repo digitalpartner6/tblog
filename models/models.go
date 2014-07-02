@@ -261,6 +261,7 @@ func SaveTbRecord(info map[string]string) (err error){
     // 存到reids
     err = Record2Redis(conn, id, formula_name, symbol)
     if err != nil {
+        fmt.Println("xxxx", err)
         return
     }
 
@@ -406,6 +407,7 @@ func Record2Redis(conn redis.Conn, recordId, fname, symbol string) (err error){
 
     fid, err := GetFuturesId(conn, fname, symbol)
     if err != nil {
+        fmt.Println("no key")
         return
     }
 
