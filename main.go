@@ -9,9 +9,10 @@ import(
     "io"
     "time"
     "strings"
-    "github.com/howeyc/fsnotify"
     "runtime"
-   M "github.com/weisd/tblog/models"
+	"github.com/astaxie/beego/logs"
+    "github.com/howeyc/fsnotify"
+    M "github.com/weisd/tblog/models"
 )
 
 var (
@@ -20,14 +21,30 @@ buildPeriod time.Time
 DirPath string
 )
 
+var Loger *logs.BeeLogger
+
 func init(){
+    Loger = logs.NewLogger(10000)
+    err := Loger.SetLogger("console", "")
+    if err != nil {
+        fmt.Println("can not init console log", err)
+    }
+
     DirPath = M.Cfg.MustValue("base", "path")
 }
 
 func main(){
-    exit := make(chan bool)
+   exit := make(chan bool)
+   Loger.Info("start ...")
 
-    //DirPath = "./TBlist"
+   /*
+   conn := M.RedisPool.Get()
+   defer conn.Close()
+
+   M.Xiapu(conn, "a_aRbreak_6w", "IF888")
+
+   return
+   */
     initData(DirPath)
     NewWatcher(DirPath)
 
@@ -64,7 +81,7 @@ func initData(dirPath string){
 }
 
 // 监控目录
-func NewWatcher(path string){
+func NewWatcher(pathstr string){
     watcher, err := fsnotify.NewWatcher()
     if err != nil {
         fmt.Println("[ERRO] NewWatcher Failed")
@@ -76,11 +93,24 @@ func NewWatcher(path string){
         for {
             select{
               case e := <-watcher.Event:
+                  if e.IsDelete() {
+                      continue
+                  }
+
                   // Prevent duplicated builds.
 				if buildPeriod.Add(1 * time.Second).After(time.Now()) {
 					continue
 				}
 				buildPeriod = time.Now()
+
+                  _, file := path.Split(filepath.ToSlash(e.Name))
+                  fnames := strings.Split(path.Base(file), "#")
+
+                  if len(fnames) <3 {
+                      Flog("[INFO]:非日志文件", file)
+                      continue
+                  }
+
 
 				mt := getFileModTime(e.Name)
 				if t := eventTime[e.Name]; mt == t {
@@ -96,7 +126,7 @@ func NewWatcher(path string){
         }
     }()
 
-    err = watcher.Watch(path)
+    err = watcher.Watch(pathstr)
     if err != nil {
         Flog("err : fail to watch dir ", err)
         os.Exit(2)
@@ -111,9 +141,11 @@ func Flog(msg string, args... interface{}){
 
 func Save2Mysql(file string){
 
+    /*
     if !strings.HasSuffix(file, "TXT"){
             return 
     }
+    */
 
     f, err := os.Open(file)
     if err != nil {
@@ -122,16 +154,14 @@ func Save2Mysql(file string){
     }
     defer f.Close()
 
-    /*
-     Flog("[INFO]:读取文件：", file)
+    Flog("[INFO]:读取文件：", file)
     _, file = path.Split(filepath.ToSlash(file))
     fnames := strings.Split(path.Base(file), "#")
+
     if len(fnames) <3 {
+        Flog("[INFO]:非日志文件", file)
         return
     }
-    sname := strings.TrimLeft(fnames[0], "$")
-    symbol := fnames[1]
-    */
 
     bufreader := bufio.NewReader(f)
 
@@ -148,6 +178,9 @@ func Save2Mysql(file string){
         info := make(map[string]string)
 
         kvs := strings.Split(line, ";")
+        if len(kvs) < 5 {
+            continue
+        }
         for i := 0; i< len(kvs); i++{
             kv := strings.Split(kvs[i], "=")
             if len(kv) != 2 {
@@ -194,12 +227,14 @@ func Save2Mysql(file string){
     Flog("[INFO]: 共写入数据条数：", count)
     // 存完 record 再计算stats
     // 从文件名中得到策略名称
+    /*
     Flog("[INFO]:读取文件：", file)
     _, file = path.Split(filepath.ToSlash(file))
     fnames := strings.Split(path.Base(file), "#")
     if len(fnames) <3 {
         return
     }
+    */
     sname := strings.TrimLeft(fnames[0], "$")
     
     // 更新统计信息
@@ -209,8 +244,10 @@ func Save2Mysql(file string){
         return
     }
 
+    conn := M.RedisPool.Get()
+    defer conn.Close()
     // 更新info到redis
-    err = M.Save2Redis(sname, fnames[1])
+    err = M.Save2Redis(conn, sname, fnames[1])
     if err != nil {
         Flog("[ERRO]:save2redis failed!", err)
         return
