@@ -837,12 +837,12 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 夏普指数
     conn := RedisPool.Get()
     defer conn.Close()
-    xiapu, err := Xiapu(conn, fname, symbol)
+    xiapu, err := Xiapu(conn, fname, symbol, rate_month_shou_yi/100, 0.03)
     if err != nil {
         return
     }
 
-    finfo.Xiapu = xiapu
+    finfo.Xiapu = xiapu*100
 
 
     _, err = Engine.Where("formula_name=? and symbol=?", fname, symbol).Update(finfo)
@@ -866,7 +866,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
 }
 
 // 夏普指数
-func Xiapu(conn redis.Conn, fname, symbol string) (xp float64, err error){
+func Xiapu(conn redis.Conn, fname, symbol string, rate_month_shou_yi, rate_yh float64) (xp float64, err error){
     fid, err := GetFuturesId(conn, fname, symbol)
     if err != nil {
         return
@@ -897,8 +897,10 @@ func Xiapu(conn redis.Conn, fname, symbol string) (xp float64, err error){
     for i := 0; i<len(profits); i++{
         powSum += math.Pow((profits[i] - avgProfit), 2)
     }
-    //  平均
-    xp = math.Sqrt(powSum/float64(count))
+    // 月收益率方差， 
+    fx := math.Sqrt(powSum/float64(count))
+
+    xp = ((rate_month_shou_yi - rate_yh)/12)/fx
 
 //    fmt.Println(fmt.Sprintf("%.2f, %d, %.2f",totalProfits, count, avgProfit), profits)
 //    fmt.Println(fmt.Sprintf("%.2f,%.2f, %.2f",powSum, powSum/float64(count),xp))
