@@ -41,7 +41,7 @@ func main(){
    conn := M.RedisPool.Get()
    defer conn.Close()
 
-   M.Xiapu(conn, "a_aRbreak_6w", "IF888")
+   M.Xiapu(conn, "a_aRbreak_6w", "IF888", 600000, 0.3, 0.03)
 
    return
    */

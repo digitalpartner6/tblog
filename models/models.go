@@ -11,6 +11,7 @@ import(
    _ "github.com/go-sql-driver/mysql"
    "github.com/go-xorm/xorm"
     "github.com/garyburd/redigo/redis"
+    "github.com/weisd/tblog/helper"
 )
 
 var (
@@ -837,7 +838,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 夏普指数
     conn := RedisPool.Get()
     defer conn.Close()
-    xiapu, err := Xiapu(conn, fname, symbol, rate_month_shou_yi/100, 0.03)
+    xiapu, err := Xiapu(conn, fname, symbol, capital, rate_month_shou_yi/100, 0.03)
     if err != nil {
         return
     }
@@ -866,7 +867,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
 }
 
 // 夏普指数
-func Xiapu(conn redis.Conn, fname, symbol string, rate_month_shou_yi, rate_yh float64) (xp float64, err error){
+func Xiapu(conn redis.Conn, fname, symbol string, capital, rate_month_shou_yi, rate_yh float64) (xp float64, err error){
     fid, err := GetFuturesId(conn, fname, symbol)
     if err != nil {
         return
@@ -879,29 +880,65 @@ func Xiapu(conn redis.Conn, fname, symbol string, rate_month_shou_yi, rate_yh fl
     count := 0
     totalProfits := 0.0
 
+    manths := make(map[string]float64, 0)
+
     for i := 0; i< len(res); i++ {
         if i%2 == 1 {
             f, _ := strconv.ParseFloat(res[i], 64)
             profits = append(profits, f)
+
+            manths[res[i-1]] = f
             count ++
             totalProfits += f
         }
     }
 
+    sortValues := helper.NewMapSorter(manths)
+
+    // 增长率
+    upRate := make(map[string]float64, 0)
+    // 每月百分比
+    lenVals := len(sortValues)
+    for i :=0; i<lenVals; i++ {
+        v := sortValues[i]
+        if i == 0 {
+            upRate[v.Key] = v.Val/capital
+        }else{
+            v2 := sortValues[i-1]
+            upRate[v.Key] = (v.Val - v2.Val) / v2.Val
+        }
+        fmt.Println(i, v.Key, v.Val)
+    }
+
+    totalRate := 0.0
+    countRate := 0
+    for k, v := range upRate {
+        fmt.Println(k, v)
+        totalRate += v
+        countRate ++
+    }
+
+    avgRate := totalRate/ float64(countRate)
+
+    fmt.Println(avgRate)
+
+
     // 平均值
-    avgProfit := totalProfits/float64(count)
+//    avgProfit := totalProfits/float64(count)
 
     // 平均值的差
     // 平方和
     powSum := 0.0
-    for i := 0; i<len(profits); i++{
-        powSum += math.Pow((profits[i] - avgProfit), 2)
+    for _,v := range upRate{
+        powSum += math.Pow((v - avgRate), 2)
     }
     // 月收益率方差， 
-    fx := math.Sqrt(powSum/float64(count))
+    fx := math.Sqrt(powSum/float64(countRate))
 
     xp = ((rate_month_shou_yi - rate_yh)/12)/fx
 
+    fmt.Println(fx, xp)
+    
 //    fmt.Println(fmt.Sprintf("%.2f, %d, %.2f",totalProfits, count, avgProfit), profits)
 //    fmt.Println(fmt.Sprintf("%.2f,%.2f, %.2f",powSum, powSum/float64(count),xp))
     return
