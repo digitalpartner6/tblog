@@ -798,13 +798,15 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 交易月数 进一，不足一月数一月？
     count_sell_months := math.Ceil(count_sell_day / 30.5)
 
+    // 交易年数
+    sell_year := oldInfo.LastDate.Year() - oldInfo.StartDate.Year()
 
     // 月平均收益率
     rate_month_shou_yi := jing_li_run/count_sell_months / capital * 100
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
-    rate_year_shou_yi := math.Pow((rate_shou_yi/100), 1/math.Ceil(count_sell_day/250)) * 100
+    rate_year_shou_yi := math.Pow((rate_shou_yi/100), 1/float64(sell_year)) * 100
     if rate_shou_yi < 0 {
         rate_year_shou_yi = -rate_year_shou_yi
     }
