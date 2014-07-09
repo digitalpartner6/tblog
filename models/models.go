@@ -804,7 +804,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
     // 月平均收益
     avg_month_shou_yi := jing_li_run / count_sell_day * 3.05
     // 年化收益率
-    rate_year_shou_yi := math.Pow(math.Ceil(count_sell_day/365), 1/(rate_shou_yi/100))
+    rate_year_shou_yi := math.Pow((rate_shou_yi/100), 1/math.Ceil(count_sell_day/365))
     if rate_shou_yi < 0 {
         rate_year_shou_yi = -rate_year_shou_yi
     }
