@@ -800,6 +800,7 @@ func DoUpdateInfo(fname, symbol string) (err error){
 
     // 交易年数
     sell_year := oldInfo.LastDate.Year() - oldInfo.StartDate.Year()
+    fmt.Println("sell_year", sell_year, rate_shou_yi)
 
     // 月平均收益率
     rate_month_shou_yi := jing_li_run/count_sell_months / capital * 100
@@ -924,20 +925,20 @@ func Xiapu(conn redis.Conn, fname, symbol string, capital, rate_month_shou_yi, r
             v2 := sortValues[i-1]
             upRate[v.Key] = (v.Val - v2.Val) / v2.Val
         }
-        fmt.Println(i, v.Key, v.Val)
+//        fmt.Println(i, v.Key, v.Val)
     }
 
     totalRate := 0.0
     countRate := 0
     for k, v := range upRate {
-        fmt.Println(k, v)
+//        fmt.Println(k, v)
         totalRate += v
         countRate ++
     }
 
     avgRate := totalRate/ float64(countRate)
 
-    fmt.Println(avgRate)
+//    fmt.Println(avgRate)
 
 
     // 平均值
@@ -954,7 +955,7 @@ func Xiapu(conn redis.Conn, fname, symbol string, capital, rate_month_shou_yi, r
 
     xp = ((rate_month_shou_yi - rate_yh)/12)/fx
 
-    fmt.Println(fx, xp)
+//    fmt.Println(fx, xp)
     
 //    fmt.Println(fmt.Sprintf("%.2f, %d, %.2f",totalProfits, count, avgProfit), profits)
 //    fmt.Println(fmt.Sprintf("%.2f,%.2f, %.2f",powSum, powSum/float64(count),xp))
