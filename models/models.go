@@ -930,7 +930,7 @@ func Xiapu(conn redis.Conn, fname, symbol string, capital, rate_month_shou_yi, r
 
     totalRate := 0.0
     countRate := 0
-    for k, v := range upRate {
+    for _, v := range upRate {
 //        fmt.Println(k, v)
         totalRate += v
         countRate ++
