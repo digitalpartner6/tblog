@@ -6,6 +6,7 @@ import(
     "errors"
     "strconv"
     "math"
+    "regexp"
     "github.com/Unknwon/goconfig"
     "github.com/weisd/tblog/conf"
    _ "github.com/go-sql-driver/mysql"
@@ -232,14 +233,23 @@ func SaveTbRecord(info map[string]string) (err error){
     }
 
     profit := 0.00
+    // 添加品种杠杆
+    conn := RedisPool.Get()
+    defer conn.Close()
+
+    // 品种字母
+
+    ganggan, err := GetSymbolLever(conn, symbol)
+    if err != nil {
+        return errors.New(fmt.Sprintf("没有对应的品种杠杆:%s", symbol))
+    }
 
     // 算出利润
     if action == "sell" {
-        profit =  (price - entry_price) * float64(number)
+        profit =  (price - entry_price) * float64(number) * float64(ganggan)
     } else if action == "buytocover" {
-        profit = (entry_price - price) * float64(number)
+        profit = (entry_price - price) * float64(number) * float64(ganggan)
     }
-
 
     var isProfit int = 0
     if profit > 0 {
@@ -257,9 +267,7 @@ func SaveTbRecord(info map[string]string) (err error){
         return
     }
 
-    conn := RedisPool.Get()
-    defer conn.Close()
-
+   
     // 存到reids
     err = Record2Redis(conn, id, formula_name, symbol)
     if err != nil {
@@ -361,6 +369,13 @@ func SaveTbRecord(info map[string]string) (err error){
 
 
     return
+}
+
+// 取品种杠杆
+func GetSymbolLever(conn redis.Conn, symbol string) (gg int64 , err error) {
+    removeNumberRep := regexp.MustCompile(`\d`)
+    preV := removeNumberRep.ReplaceAllString(symbol, "")
+    return redis.Int64(conn.Do("HGET", "futures.strategy.symbol.lever", preV))
 }
 
 // 取策略id
