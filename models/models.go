@@ -154,6 +154,7 @@ func CheckMysqlInfoExists(fname, symbol string) bool {
 
     has, err := Engine.Where("formula_name=? and symbol=?", fname, symbol).Get(fInfo)
     if err != nil || !has {
+        fmt.Println(err)
         return false
     }
 

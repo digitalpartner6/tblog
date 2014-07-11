@@ -167,6 +167,7 @@ func Save2Mysql(file string){
     // 判断 对应杠杆是否已存在
     fname := fnames[0]
     symbol := fnames[1]
+    fmt.Println(fname, symbol)
     bool_isMysqlInfo := M.CheckMysqlInfoExists(fname, symbol)
 
     if !bool_isMysqlInfo {
