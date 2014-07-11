@@ -341,7 +341,10 @@ func SaveTbRecord(info map[string]string) (err error){
     updateInfo.MaxHuiChePrice = math.Max(fInfo.MaxHuiChePrice, max_hui_che)
 
     // 交易后的余额，存入每天余额列表
-    updateInfo.Remaining = fInfo.Remaining + profit
+    remain := fInfo.Remaining + profit
+    fmt.Println("remain",fInfo.Remaining, profit, remain, ganggan)
+//    updateInfo.Remaining = fInfo.Remaining + profit
+    updateInfo.Remaining = remain
 
     // 最大回撤百分比
     if isProfit == 1 {
@@ -356,13 +359,13 @@ func SaveTbRecord(info map[string]string) (err error){
     }
 
     // 保存日期记录
-    err = SaveDaliyData(conn, formula_name, symbol, insertDate, updateInfo.Remaining)
+    err = SaveDaliyData(conn, formula_name, symbol, insertDate, remain)
     if err != nil {
         return
     }
 
     //保存月净利润
-    err = SaveMonthProfit(conn, formula_name, symbol, insertDate, updateInfo.JingLiRun)
+    err = SaveMonthProfit(conn, formula_name, symbol, insertDate, remain)
     if err != nil {
         return
     }
