@@ -174,6 +174,22 @@ func Save2Mysql(file string){
         return
     }
 
+    conn := M.RedisPool.Get()
+    defer conn.Close()
+    // 取redis里的fid
+    _, err = M.GetFuturesId(conn, fname, symbol)
+    if err != nil {
+        fmt.Println("redis 里没有对就的id no key")
+        return
+    }
+
+    _, err = M.GetSymbolLever(conn, symbol)
+    if err != nil {
+        fmt.Println(fmt.Sprintf("没有对应的品种杠杆:%s", symbol))
+        return
+    }
+
+
     bufreader := bufio.NewReader(f)
 
     count := 0
@@ -255,8 +271,6 @@ func Save2Mysql(file string){
         return
     }
 
-    conn := M.RedisPool.Get()
-    defer conn.Close()
     // 更新info到redis
     err = M.Save2Redis(conn, sname, fnames[1])
     if err != nil {
