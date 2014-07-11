@@ -163,6 +163,17 @@ func Save2Mysql(file string){
         return
     }
 
+    // 判断mysql，redis info是否已存在
+    // 判断 对应杠杆是否已存在
+    fname := fnames[0]
+    symbol := fnames[1]
+    bool_isMysqlInfo := M.CheckMysqlInfoExists(fname, symbol)
+
+    if !bool_isMysqlInfo {
+        fmt.Println("mysql info 不存在")
+        return
+    }
+
     bufreader := bufio.NewReader(f)
 
     count := 0

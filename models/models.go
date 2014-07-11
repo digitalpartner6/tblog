@@ -148,6 +148,18 @@ type TbRecord struct{
     IsProfit int
 }
 
+// mysqlInfo是否存在
+func CheckMysqlInfoExists(fname, symbol string) bool {
+    fInfo := new(Finfo)
+
+    has, err := Engine.Where("formula_name=? and symbol=?", fname, symbol).Get(fInfo)
+    if err != nil || !has {
+        return false
+    }
+
+    return true
+}
+
 // 保存交易记录到mysql
 func SaveTbRecord(info map[string]string) (err error){
     //tb_record
@@ -342,7 +354,7 @@ func SaveTbRecord(info map[string]string) (err error){
 
     // 交易后的余额，存入每天余额列表
     remain := fInfo.Remaining + profit
-    fmt.Println("remain",fInfo.Remaining, profit, remain, ganggan)
+//    fmt.Println("remain",fInfo.Remaining, profit, remain, ganggan)
 //    updateInfo.Remaining = fInfo.Remaining + profit
     updateInfo.Remaining = remain
 
