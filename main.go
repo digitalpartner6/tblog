@@ -165,7 +165,7 @@ func Save2Mysql(file string){
 
     // 判断mysql，redis info是否已存在
     // 判断 对应杠杆是否已存在
-    fname := fnames[0]
+    fname := strings.TrimLeft(fnames[0], "$")
     symbol := fnames[1]
     fmt.Println(fname, symbol)
     bool_isMysqlInfo := M.CheckMysqlInfoExists(fname, symbol)
@@ -263,17 +263,16 @@ func Save2Mysql(file string){
         return
     }
     */
-    sname := strings.TrimLeft(fnames[0], "$")
     
     // 更新统计信息
-    err = M.DoUpdateInfo(sname, fnames[1])
+    err = M.DoUpdateInfo(fname, fnames[1])
     if err != nil {
         Flog("[ERRO]:update info failed",err)
         return
     }
 
     // 更新info到redis
-    err = M.Save2Redis(conn, sname, fnames[1])
+    err = M.Save2Redis(conn, fname, fnames[1])
     if err != nil {
         Flog("[ERRO]:save2redis failed!", err)
         return
